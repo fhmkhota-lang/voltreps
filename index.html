@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volt Africa Quote Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f4f2;color:#1a1a18;margin:0;padding:0}
 .topbar{background:#E8352A;color:white;padding:14px 24px;display:flex;align-items:center;gap:14px}
@@ -167,6 +168,7 @@ h2:first-child{margin-top:0}
   <div class="nav">
     <button class="btn btn-grey" onclick="go(3)">Back</button>
     <button class="btn btn-red" id="copyAllBtn" onclick="copyAll()">Copy All Slide Content</button>
+      <button class="btn btn-green" id="dlPptxBtn" onclick="downloadPptx()" style="display:none">Download PPTX</button>
   </div>
 </div>
 
@@ -545,6 +547,16 @@ async function generate(){
     if(data.error){el.innerHTML='<div class="errmsg"><strong>API Error:</strong> '+data.error.message+'<br><br>Check your key and billing at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>';return;}
     var text=(data.content||[]).map(function(c){return c.text||"";}).join("");
     renderSlides(text);
+    // Store data for PPTX download
+    var formData = {
+      rep: document.getElementById("repName").value,
+      client: document.getElementById("clientName").value,
+      start: document.getElementById("startDate").value,
+      end: document.getElementById("endDate").value,
+      objective: document.getElementById("objective").value
+    };
+    var t2 = totals();
+    storePptxData(buildPptxReplacementsFromAI(text, formData, t2));
   }catch(err){
     el.innerHTML='<div class="errmsg"><strong>Network Error:</strong> '+err.message+'<br>Make sure you have a valid API key entered in Step 1.</div>';
   }
@@ -580,6 +592,222 @@ function copyAll(){
   navigator.clipboard.writeText(out.trim()).then(function(){
     var b=document.getElementById("copyAllBtn"); var o=b.textContent; b.textContent="Copied!"; setTimeout(function(){b.textContent=o;},2000);
   });
+}
+
+
+// ── PPTX DOWNLOAD ──────────────────────────────────────────
+var pptxSlideData = {};
+
+function storePptxData(data) {
+  pptxSlideData = data;
+  document.getElementById("dlPptxBtn").style.display = "inline-block";
+}
+
+async function downloadPptx() {
+  var btn = document.getElementById("dlPptxBtn");
+  btn.textContent = "Building PPTX...";
+  btn.disabled = true;
+
+  try {
+    // Fetch the template from same origin (GitHub Pages)
+    var templateUrl = window.location.href.replace(/\/[^\/]*$/, "/") + "Proposal_Template.pptx";
+    // handle root path
+    if (templateUrl.endsWith("//Proposal_Template.pptx")) {
+      templateUrl = window.location.origin + "/Proposal_Template.pptx";
+    }
+    
+    var resp = await fetch(templateUrl);
+    if (!resp.ok) throw new Error("Could not load template file. Make sure Proposal_Template.pptx is in your GitHub repo.");
+    
+    var arrayBuffer = await resp.arrayBuffer();
+    var zip = await JSZip.loadAsync(arrayBuffer);
+    
+    // Build replacements map from stored slide data
+    var rep = pptxSlideData;
+    
+    // Process each slide XML file
+    var slideFiles = Object.keys(zip.files).filter(function(f) {
+      return f.match(/ppt\/slides\/slide\d+\.xml$/);
+    });
+    
+    for (var i = 0; i < slideFiles.length; i++) {
+      var fileName = slideFiles[i];
+      var xmlContent = await zip.files[fileName].async("string");
+      
+      // Smart replace: collapse paragraph text runs, replace, restore
+      xmlContent = smartXmlReplace(xmlContent, rep);
+      
+      zip.file(fileName, xmlContent);
+    }
+    
+    // Generate and download
+    var blob = await zip.generateAsync({
+      type: "blob",
+      mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      compression: "DEFLATE"
+    });
+    
+    var clientName = (rep["{{Client Name}}"] || "Proposal").replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    var fileName = "Volt_Africa_Proposal_" + clientName.replace(/ /g, "_") + ".pptx";
+    
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    btn.textContent = "Download PPTX";
+    btn.disabled = false;
+    
+  } catch(err) {
+    alert("PPTX Error: " + err.message);
+    btn.textContent = "Download PPTX";
+    btn.disabled = false;
+  }
+}
+
+function smartXmlReplace(xmlContent, replacements) {
+  // Replace placeholders that may be split across XML runs within a paragraph
+  // by extracting combined text per paragraph, replacing, then rebuilding
+  return xmlContent.replace(/<a:p>[\s\S]*?<\/a:p>/g, function(para) {
+    // Get all text from runs
+    var texts = [];
+    var runRegex = /<a:t[^>]*>([^<]*)<\/a:t>/g;
+    var match;
+    while ((match = runRegex.exec(para)) !== null) {
+      texts.push(match[1]);
+    }
+    var combined = texts.join("");
+    
+    // Check if any placeholder exists in combined text
+    var needsReplace = false;
+    var modified = combined;
+    for (var ph in replacements) {
+      if (modified.indexOf(ph) !== -1) {
+        modified = modified.split(ph).join(replacements[ph]);
+        needsReplace = true;
+      }
+    }
+    
+    if (!needsReplace) return para;
+    
+    // Find the first run's formatting properties
+    var firstRunMatch = para.match(/<a:r>([\s\S]*?)<a:t[^>]*>[^<]*<\/a:t>\s*<\/a:r>/);
+    if (!firstRunMatch) return para;
+    
+    var rprMatch = firstRunMatch[1].match(/<a:rPr[\s\S]*?(?:<\/a:rPr>|\/>)/);
+    var rpr = rprMatch ? rprMatch[0] : "";
+    
+    // Escape XML special chars in replacement text
+    var safeText = modified
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+    
+    var newRun = "<a:r>" + rpr + "<a:t>" + safeText + "</a:t></a:r>";
+    
+    // Remove all existing runs and insert new one
+    var newPara = para.replace(/<a:r>[\s\S]*?<\/a:r>/g, "");
+    // Insert before endParaRPr if present, otherwise before closing tag
+    if (newPara.indexOf("<a:endParaRPr") !== -1) {
+      newPara = newPara.replace("<a:endParaRPr", newRun + "<a:endParaRPr");
+    } else {
+      newPara = newPara.replace("</a:p>", newRun + "</a:p>");
+    }
+    
+    return newPara;
+  });
+}
+
+function buildPptxReplacementsFromAI(text, formData, totals) {
+  // Parse AI output sections
+  var sections = {};
+  var parts = text.split(/===\s*SLIDE\s*(\d+)[^=]*===/i);
+  for (var i = 1; i < parts.length; i += 2) {
+    sections[parseInt(parts[i])] = (parts[i+1]||"").trim();
+  }
+  
+  var t = totals;
+  var d = formData;
+  
+  // Helper to extract a field value from section text
+  function field(sectionText, label) {
+    if (!sectionText) return "";
+    var regex = new RegExp(label + "[:\\s]+([^\\n]+)", "i");
+    var m = sectionText.match(regex);
+    return m ? m[1].trim() : "";
+  }
+  
+  // Build all display items list
+  var displayNames = t.dI.map(function(i){return i.name;}).join(", ") || "-";
+  var contentNames = t.cI.map(function(i){return i.name;}).join(", ") || "-";
+  var socialNames  = t.sI.map(function(i){return i.name;}).join(", ") || "-";
+  var paidNames    = (li.paid && t.pT>0) ? (li.paid.placement || grp("g-paid").join(", ")) : "-";
+  var printNames   = t.prI.map(function(i){return i.name;}).join(", ") || "-";
+
+  // Slide 11 quote values
+  var displayQty   = t.dI.map(function(i){return i.imps ? i.imps.toLocaleString()+" imps" : i.qty+" unit(s)";}).join("\n") || "-";
+  var displayRate  = t.dI.map(function(i){return fmt(i.total);}).join("\n") || "-";
+  var contentQty   = t.cI.map(function(i){return i.qty+" article(s)";}).join("\n") || "-";
+  var contentRate  = t.cI.map(function(i){return fmt(i.total);}).join("\n") || "-";
+  var socialQty    = t.sI.map(function(i){return i.qty+" posts";}).join("\n") || "-";
+  var socialRate   = t.sI.map(function(i){return fmt(i.qty*i.rate);}).join("\n") || "-";
+  var boostAmt     = t.sI.map(function(i){return i.boost>0?fmt(i.boost):"-";}).join("\n") || "-";
+  var boostMgmt    = t.sI.map(function(i){return i.boost>0?fmt(i.mgmt):"-";}).join("\n") || "-";
+  
+  var paidAmt      = (li.paid&&t.pT>0) ? fmt(li.paid.amount) : "-";
+  var paidAccts    = (li.paid&&t.pT>0) ? li.paid.accounts+" account(s)" : "-";
+  var paidSetup    = (li.paid&&t.pT>0) ? fmt(li.paid.setup) : "-";
+  var paidMgmt     = (li.paid&&t.pT>0) ? fmt(li.paid.mgmt) : "-";
+  
+  var printQty     = t.prI.map(function(i){return i.qty+" insertion(s)";}).join("\n") || "-";
+  var printRate    = t.prI.map(function(i){return fmt(i.total);}).join("\n") || "-";
+  var printTotal   = fmt(t.prT) || "-";
+  
+  // Print sizes from configure step
+  var printSizes = t.prI.map(function(i){
+    return i.name + (i.colcm ? " (" + i.colcm + " col.cm)" : "");
+  }).join("\n") || "-";
+
+  return {
+    "{{Client Name}}":                        d.client,
+    "{{Rep Name}}":                           d.rep,
+    "{{Slide 4 Campaign Period}}":            d.start + " to " + d.end,
+    "{{Slide 4 Campaign Objective}}":         d.objective,
+    "{{Slide 5 Target Age Group}}":           field(sections[5], "Age"),
+    "{{Slide 5 Target Gender}}":              field(sections[5], "Gender"),
+    "{{Slide 5 Interests}}":                  field(sections[5], "Interests"),
+    "{{Slide 5 Income Level}}":               field(sections[5], "Income Level"),
+    "{{Slide 5 Target Regions}}":             field(sections[5], "Geographics"),
+    "{{Slide 5 Pain Points}}":                field(sections[5], "Pain Points"),
+    "{{Slide 6 Display Site Placement}}":     displayNames,
+    "{{Slide 6 Targeting Format}}":           field(sections[6], "Format") || "728x90, 300x250, 300x600",
+    "{{Slide 7 Content Placement}}":          contentNames,
+    "{{Slide 7 Content Format}}":             "Client to provide copy, header image, video link where needed and an external link.",
+    "{{Slide 8 Social Media Placement}}":     field(sections[8], "Placement") || socialNames,
+    "{{Slide 9 Paid Media Placement}}":       field(sections[9], "Placement") || paidNames,
+    "{{Slide 10 Print Ads Titles}}":          printNames,
+    "{{Slide 10 Print Ad Sizes}}":            printSizes,
+    "{{Slide 11 Display Site Placement Quantity}}": displayQty,
+    "{{Slide 11 Display Rate}}":              displayRate,
+    "{{Slide 11 Content Quantity}}":          contentQty,
+    "{{Slide 11 Content Rate}}":              contentRate,
+    "{{Slide 11 Social Media Organic Posts Quantity}}": socialQty,
+    "{{Slide 11 Social Media Rate}}":         socialRate,
+    "{{Slide 11 Social Boosting Amount}}":    boostAmt,
+    "{{Slide 11 Social Media Management Fee}}": boostMgmt,
+    "{{Slide 11 Paid Media Amount}}":         paidAmt,
+    "{{Slide 11 Paid Media Accounts Quantity}}": paidAccts,
+    "{{Slide 11 Paid Media Setup Cost}}":     paidSetup,
+    "{{Slide 11 Paid Media Management Fee}}": paidMgmt,
+    "{{Slide 11 Print Ads Quantity}}":        printQty,
+    "{{ Slide 11 Print Ads Rate}}":           printRate,
+    "{{ Slide 11 Print Total quote amount}}": fmt(t.grand)
+  };
 }
 
 renderPlatforms();
