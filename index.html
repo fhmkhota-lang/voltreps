@@ -487,13 +487,11 @@ function saveKey(){
   if(k){localStorage.setItem("volt_key",k);document.getElementById("apibox").style.display="none";}
 }
 function loadKey(){
-  var k=localStorage.getItem("volt_key")||"";
-  if(k){document.getElementById("apiKey").value=k;document.getElementById("apibox").style.display="none";}
+  document.getElementById("apibox").style.display="none";
 }
 
 async function generate(){
-  var key=localStorage.getItem("volt_key")||document.getElementById("apiKey").value.trim();
-  if(!key){alert("Please add your Anthropic API key first.");go(0);return;}
+  var key=localStorage.getItem("volt_key")||document.getElementById("apiKey").value.trim()||"via-worker";
   go(4);
   var t=totals();
   var el=document.getElementById("aiOut");
@@ -538,9 +536,9 @@ async function generate(){
     "=== SLIDE 12 - REP DETAILS ===\n"+d.rep;
 
   try{
-    var resp=await fetch("https://api.anthropic.com/v1/messages",{
+    var resp=await fetch("https://billowing-unit-4511.fhmkhota.workers.dev",{
       method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
       body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2500,messages:[{role:"user",content:prompt}]})
     });
     var data=await resp.json();
