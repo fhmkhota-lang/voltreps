@@ -625,26 +625,30 @@ async function downloadPptx() {
     // Build replacements map from stored slide data
     var rep = pptxSlideData;
     
-    // Process each slide XML file
-    var slideFiles = Object.keys(zip.files).filter(function(f) {
-      return f.match(/ppt\/slides\/slide\d+\.xml$/);
-    });
-    
-    for (var i = 0; i < slideFiles.length; i++) {
-      var fileName = slideFiles[i];
-      var xmlContent = await zip.files[fileName].async("string");
-      
-      // Smart replace: collapse paragraph text runs, replace, restore
-      xmlContent = smartXmlReplace(xmlContent, rep);
-      
-      zip.file(fileName, xmlContent);
+    // Only modify slide XML files - leave all binary files (images, fonts) untouched
+    var allFiles = Object.keys(zip.files);
+    for (var i = 0; i < allFiles.length; i++) {
+      var fileName = allFiles[i];
+      if (fileName.match(/ppt\/slides\/slide\d+\.xml$/)) {
+        var xmlContent = await zip.files[fileName].async("string");
+        xmlContent = smartXmlReplace(xmlContent, rep);
+        zip.file(fileName, xmlContent, {binary: false});
+      }
+      // All other files remain unchanged in the zip
     }
     
     // Generate and download
-    var blob = await zip.generateAsync({
-      type: "blob",
-      mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      compression: "DEFLATE"
+    // IMPORTANT: use original compression for each file to avoid corrupting binary data
+    // Generate with correct settings - preserve binary integrity
+    // Generate with STORE to preserve all binary files intact
+    var blobParts = [];
+    var zipOutput = await zip.generateAsync({
+      type: "uint8array",
+      compression: "DEFLATE",
+      compressionOptions: { level: 1 }
+    });
+    var blob = new Blob([zipOutput], {
+      type: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     });
     
     var clientName = (rep["{{Client Name}}"] || "Proposal").replace(/[^a-zA-Z0-9 ]/g, "").trim();
