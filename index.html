@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volt Africa Quote Builder</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f4f2;color:#1a1a18;margin:0;padding:0}
+.topbar{background:#E8352A;color:white;padding:14px 24px;display:flex;align-items:center;gap:14px}
+.topbar .logo{font-size:22px;font-weight:900}
+.topbar h1{font-size:17px;font-weight:normal;margin:0}
+.stepbar{display:flex;background:#181816;padding:10px 20px;gap:6px;overflow-x:auto}
+.sbtn{background:transparent;border:1px solid #444;color:#888;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;white-space:nowrap;font-family:Arial,sans-serif}
+.sbtn.active{background:#E8352A;border-color:#E8352A;color:white}
+.sbtn.done{border-color:#7ec856;color:#7ec856}
+.wrap{max-width:860px;margin:0 auto;padding:28px 20px}
+.panel{display:none}
+.panel.active{display:block}
+h2{font-size:17px;border-bottom:2px solid #E8352A;padding-bottom:8px;margin:28px 0 16px;color:#1a1a18}
+h2:first-child{margin-top:0}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:bold;color:#5a5850;margin-bottom:5px}
+.field label.req:after{content:" *";color:#E8352A}
+.field input,.field textarea,.field select{width:100%;padding:9px 12px;border:1px solid #ccc;border-radius:6px;font-size:14px;background:white;color:#1a1a18;box-sizing:border-box;font-family:Arial,sans-serif}
+.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid #E8352A;border-color:#E8352A}
+.field textarea{min-height:80px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{display:inline-block;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;border:none;font-family:Arial,sans-serif}
+.btn-red{background:#E8352A;color:white}
+.btn-grey{background:white;color:#1a1a18;border:1px solid #ccc}
+.btn-green{background:#3B6D11;color:white}
+.btn:hover{opacity:0.88}
+.nav{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid #e2e0da}
+.cat{font-size:11px;font-weight:bold;color:#999;text-transform:uppercase;letter-spacing:0.07em;margin:16px 0 6px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:6px}
+.chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #e2e0da;border-radius:6px;cursor:pointer;background:white;user-select:none}
+.chip:hover{border-color:#ccc;background:#f9f8f6}
+.chip.on{border-color:#E8352A;background:#fef4f4}
+.chip input{accent-color:#E8352A;flex-shrink:0}
+.chip span{font-size:13px;line-height:1.3}
+.chip.on span{color:#B52820;font-weight:bold}
+.card{background:white;border:1px solid #e2e0da;border-radius:10px;padding:16px 18px;margin-bottom:10px}
+.card h4{font-size:14px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.tag{font-size:11px;font-weight:normal;color:#999;background:#f5f4f2;border:1px solid #e2e0da;padding:2px 8px;border-radius:20px}
+.r4{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;align-items:end}
+.calc{background:#eaf3de;border:1px solid #b2d87c;color:#3B6D11;border-radius:6px;padding:8px;font-size:13px;font-weight:bold;text-align:center;min-height:38px;display:flex;align-items:center;justify-content:center}
+.qsec{background:white;border:1px solid #e2e0da;border-radius:10px;padding:18px;margin-bottom:10px}
+.qsec h3{font-size:14px;margin:0 0 12px}
+.qrow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0efeb;font-size:13px;gap:12px}
+.qrow:last-child{border-bottom:none}
+.ql{color:#5a5850;flex:1}
+.qv{font-weight:bold;white-space:nowrap}
+.qrow.sub{font-weight:bold;padding-top:8px;border-top:1px solid #ccc;border-bottom:none}
+.grand{background:#181816;color:white;border-radius:10px;padding:18px;margin-top:8px;display:flex;justify-content:space-between;font-size:18px;font-weight:bold}
+.grand .ga{color:#7ec856}
+.scard{background:white;border:1px solid #e2e0da;border-radius:10px;padding:18px;margin-bottom:12px}
+.snum{font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.07em;color:#E8352A;margin-bottom:4px}
+.scard h3{font-size:15px;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #e2e0da;display:flex;justify-content:space-between;align-items:center}
+.scontent{font-size:13px;line-height:1.8;white-space:pre-wrap}
+.cpybtn{font-size:11px;padding:3px 10px;background:#f5f4f2;border:1px solid #e2e0da;border-radius:20px;cursor:pointer;font-family:Arial,sans-serif}
+.cpybtn:hover{border-color:#E8352A;color:#E8352A}
+.apibox{background:#fdf4e3;border:1px solid #f5c96e;border-radius:10px;padding:20px;margin-bottom:24px}
+.apibox h3{font-size:15px;color:#7a4f00;margin:0 0 10px}
+.apibox p{font-size:13px;color:#5a5850;margin:0 0 12px;line-height:1.6}
+.apibox a{color:#185FA5}
+.empty{font-size:13px;color:#999;padding:12px;background:#f9f8f6;border-radius:6px;border:1px dashed #e2e0da}
+.info{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:16px;background:#eef4fd;border:1px solid #b5d0f4;color:#185FA5}
+.spinner{width:32px;height:32px;border:3px solid #e2e0da;border-top-color:#E8352A;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.genwrap{text-align:center;padding:40px 16px;color:#5a5850}
+.errmsg{background:#fdf0ef;border:1px solid #f4a8a5;color:#991f1c;border-radius:6px;padding:12px 16px;font-size:13px;margin-bottom:12px}
+@media(max-width:600px){.g2,.r4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">VOLT.africa</div>
+  <h1>Quote Builder</h1>
+</div>
+
+<div class="stepbar" id="stepbar"></div>
+
+<div class="wrap">
+
+<div class="panel active" id="p0">
+  <div class="apibox" id="apibox">
+    <h3>One-time setup: add your API key</h3>
+    <p>To generate AI proposal content you need a free Anthropic API key.<br>
+    Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> (takes 2 minutes, free credits included).<br>
+    Your key is saved only in this browser and never shared with anyone except Anthropic.</p>
+    <div class="field" style="margin:0">
+      <label>Anthropic API key</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="saveKey()"/>
+    </div>
+  </div>
+
+  <h2>Rep and Client Details</h2>
+  <div class="g2">
+    <div class="field"><label class="req">Rep name</label><input type="text" id="repName" placeholder="Your full name"/></div>
+    <div class="field"><label class="req">Client name</label><input type="text" id="clientName" placeholder="e.g. ABC Motors"/></div>
+  </div>
+  <div class="g2">
+    <div class="field"><label class="req">Industry</label><input type="text" id="industry" placeholder="e.g. Automotive, Retail, Finance"/></div>
+    <div class="field"><label>Client website</label><input type="url" id="website" placeholder="https://"/></div>
+  </div>
+
+  <h2>Campaign Parameters</h2>
+  <div class="g2">
+    <div class="field"><label class="req">Estimated budget</label><input type="text" id="budget" placeholder="e.g. R50 000"/></div>
+    <div class="field"><label class="req">Duration</label><input type="text" id="duration" placeholder="e.g. 3 months"/></div>
+  </div>
+  <div class="g2">
+    <div class="field"><label class="req">Start date</label><input type="date" id="startDate"/></div>
+    <div class="field"><label class="req">End date</label><input type="date" id="endDate"/></div>
+  </div>
+  <div class="field"><label class="req">Campaign objective</label><input type="text" id="objective" placeholder="e.g. Drive awareness for new product launch"/></div>
+  <div class="field"><label class="req">Client goal</label><textarea id="clientGoal" placeholder="What does the client want to achieve?"></textarea></div>
+  <div class="field"><label>Current advertising on other platforms</label><textarea id="currentAds" placeholder="What is the client currently doing elsewhere?"></textarea></div>
+  <div class="field"><label class="req">Full brief from client</label><textarea id="brief" style="min-height:120px" placeholder="Describe the full brief in as much detail as possible..."></textarea></div>
+  <div class="nav"><button class="btn btn-red" onclick="go(1)">Next: Select Platforms</button></div>
+</div>
+
+<div class="panel" id="p1">
+  <div class="info">Select all products discussed with the client. You can mix digital, social, paid and print.</div>
+  <h2>Digital Display</h2>
+  <div class="cat">IOL sections</div><div class="pgrid" id="g-iol"></div>
+  <div class="cat">Daily title websites</div><div class="pgrid" id="g-dailies-d"></div>
+  <div class="cat">Community websites</div><div class="pgrid" id="g-comm-d"></div>
+  <div class="cat">Conde Nast and other</div><div class="pgrid" id="g-conde-d"></div>
+  <h2>Content Marketing</h2><div class="pgrid" id="g-content"></div>
+  <h2>Social Media</h2><div class="pgrid" id="g-social"></div>
+  <h2>Paid Media</h2><div class="pgrid" id="g-paid"></div>
+  <h2>Print Advertising</h2>
+  <div class="cat">Daily titles</div><div class="pgrid" id="g-print-d"></div>
+  <div class="cat">Community papers</div><div class="pgrid" id="g-print-c"></div>
+  <div class="cat">Magazines</div><div class="pgrid" id="g-print-m"></div>
+  <div class="nav">
+    <button class="btn btn-grey" onclick="go(0)">Back</button>
+    <button class="btn btn-red" onclick="go(2)">Next: Configure</button>
+  </div>
+</div>
+
+<div class="panel" id="p2">
+  <h2>Display Advertising</h2><div id="cfg-display"><p class="empty">No display platforms selected.</p></div>
+  <h2>Content Marketing</h2><div id="cfg-content"><p class="empty">No content marketing selected.</p></div>
+  <h2>Social Media</h2><div id="cfg-social"><p class="empty">No social media selected.</p></div>
+  <h2>Paid Media</h2><div id="cfg-paid"><p class="empty">No paid media selected.</p></div>
+  <h2>Print Advertising</h2><div id="cfg-print"><p class="empty">No print titles selected.</p></div>
+  <div class="nav">
+    <button class="btn btn-grey" onclick="go(1)">Back</button>
+    <button class="btn btn-red" onclick="go(3)">Next: Review Quote</button>
+  </div>
+</div>
+
+<div class="panel" id="p3">
+  <div id="qSummary"></div>
+  <div class="nav">
+    <button class="btn btn-grey" onclick="go(2)">Back</button>
+    <button class="btn btn-green" onclick="generate()">Generate AI Proposal</button>
+  </div>
+</div>
+
+<div class="panel" id="p4">
+  <p style="font-size:13px;color:#5a5850;margin-bottom:16px">Copy each slide into the corresponding slide of your Volt.Africa Google Slides template.</p>
+  <div id="aiOut"></div>
+  <div class="nav">
+    <button class="btn btn-grey" onclick="go(3)">Back</button>
+    <button class="btn btn-red" id="copyAllBtn" onclick="copyAll()">Copy All Slide Content</button>
+      <button class="btn btn-green" id="dlPptxBtn" onclick="downloadPptx()" style="display:none">Download PPTX</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+var LABELS = ["Client Info","Platforms","Configure","Quote","Proposal"];
+var PLATFORMS = {
+  "g-iol":["IOL National ROS","IOL News","IOL Entertainment","IOL Lifestyle","IOL Business","IOL Sport","IOL Motoring","IOL Travel","IOL Personal Finance","IOL Technology","IOL Politics"],
+  "g-dailies-d":["The Star","Saturday Star","Pretoria News","Sunday Independent","Cape Argus","Cape Times","Weekend Argus","Daily Voice","Daily News","The Mercury","Ind on Saturday","Sunday Tribune","The Post","Isolezwe"],
+  "g-comm-d":["Athlone News","Atlantic Sun","Bolander","Constantia Bulletin","False Bay Echo","Plainsman","Sentinel News","Southern Mail","Southern Suburbs Tatler","Tabletalk","Vukani","Diamond Fields Advertiser","Northern News","CapeTowner"],
+  "g-conde-d":["Glamour Digital","GQ Digital","House and Garden Digital","Fast Company","Mail and Guardian Digital","Sandton Times"],
+  "g-content":["IOL Sponsored Article","IOL Partnered Article","IOL Native Article","Title Sponsored Article","Title Partnered Article","Conde Nast Sponsored Article","Mail and Guardian Sponsored Article","Fast Company Sponsored Article"],
+  "g-social":["IOL Social Post","IOL Social Video","Title Social Post","Title Social Video","Conde Nast Social","Mail and Guardian Social"],
+  "g-paid":["DV360 Google Display","YouTube","Meta Facebook and Instagram","CTV"],
+  "g-print-d":["Cape Argus Print","Cape Times Print","Weekend Argus Print","Daily Voice Print","The Star Print","Saturday Star Print","Pretoria News Print","Sunday Independent Print","Daily News Print","The Mercury Print","Ind on Saturday Print","Sunday Tribune Print","The Post Print","Isolezwe Print"],
+  "g-print-c":["Athlone News Print","Atlantic Sun Print","Bolander Print","Constantia Bulletin Print","False Bay Echo Print","Plainsman Print","Sentinel News Print","Southern Mail Print","Southern Suburbs Tatler Print","Tabletalk Print","Vukani Print","Diamond Fields Advertiser Print"],
+  "g-print-m":["Glamour Print","GQ Print","House and Garden Print","Fast Company Print","Mail and Guardian Print"]
+};
+var CPM = {"IOL National ROS":160,"IOL News":160,"IOL Entertainment":160,"IOL Lifestyle":160,"IOL Business":160,"IOL Sport":160,"IOL Motoring":160,"IOL Travel":160,"IOL Personal Finance":160,"IOL Technology":160,"IOL Politics":160,"The Star":65,"Saturday Star":65,"Pretoria News":65,"Sunday Independent":65,"Cape Argus":65,"Cape Times":65,"Weekend Argus":65,"Daily Voice":65,"Daily News":65,"The Mercury":65,"Ind on Saturday":65,"Sunday Tribune":65,"The Post":65,"Isolezwe":65,"Athlone News":40,"Atlantic Sun":40,"Bolander":40,"Constantia Bulletin":40,"False Bay Echo":40,"Plainsman":40,"Sentinel News":40,"Southern Mail":40,"Southern Suburbs Tatler":40,"Tabletalk":40,"Vukani":40,"Diamond Fields Advertiser":40,"Northern News":40,"CapeTowner":40,"Glamour Digital":150,"GQ Digital":150,"House and Garden Digital":150,"Fast Company":5500,"Mail and Guardian Digital":350,"Sandton Times":5000};
+var CRATE = {"IOL Sponsored Article":10000,"IOL Partnered Article":20000,"IOL Native Article":35000,"Title Sponsored Article":5000,"Title Partnered Article":10000,"Conde Nast Sponsored Article":20000,"Mail and Guardian Sponsored Article":25000,"Fast Company Sponsored Article":5000};
+var SRATE = {"IOL Social Post":1000,"IOL Social Video":1000,"Title Social Post":500,"Title Social Video":500,"Conde Nast Social":8000,"Mail and Guardian Social":5000};
+var PRATE = {"Cape Argus Print":181.15,"Cape Times Print":146.06,"Weekend Argus Print":181.15,"Daily Voice Print":130.89,"The Star Print":286.54,"Saturday Star Print":199.33,"Pretoria News Print":83.50,"Sunday Independent Print":223.51,"Daily News Print":137.90,"The Mercury Print":117.41,"Ind on Saturday Print":135.80,"Sunday Tribune Print":184.03,"The Post Print":75.97,"Isolezwe Print":97.40,"Athlone News Print":91.02,"Atlantic Sun Print":106.49,"Bolander Print":93.27,"Constantia Bulletin Print":109.02,"False Bay Echo Print":90.51,"Plainsman Print":106.49,"Sentinel News Print":45.20,"Southern Mail Print":84.81,"Southern Suburbs Tatler Print":111.44,"Tabletalk Print":111.44,"Vukani Print":104.42,"Diamond Fields Advertiser Print":114.77,"Glamour Print":60200,"GQ Print":48400,"House and Garden Print":41500,"Fast Company Print":31900,"Mail and Guardian Print":352};
+var MAGS = ["Glamour Print","GQ Print","House and Garden Print","Fast Company Print"];
+var PSIZES = [{l:"Strip 7col x 50mm",v:350},{l:"Quarter page 3col x 100mm",v:300},{l:"Half page 5col x 200mm",v:1000},{l:"Full page 7col x 380mm",v:2660}];
+var SNAMES = {1:"Client Name",4:"Campaign Outline",5:"Target Audience",6:"Display Advertising",7:"Content Marketing",8:"Social Media",9:"Paid Media",10:"Print Advertising",11:"Investment Summary",12:"Rep Details"};
+var sel={}, li={}, cur=0;
+
+function K(p){return p.replace(/[^a-zA-Z0-9]/g,"_");}
+function fmt(n){return "R "+Math.round(n).toLocaleString("en-ZA");}
+
+function renderSteps(){
+  document.getElementById("stepbar").innerHTML=LABELS.map(function(l,i){
+    var c=i<cur?"done":i===cur?"active":"";
+    return '<button class="sbtn '+c+'" onclick="go('+i+')">'+(i+1)+'. '+l+'</button>';
+  }).join("");
+}
+
+function renderPlatforms(){
+  Object.keys(PLATFORMS).forEach(function(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.innerHTML=PLATFORMS[id].map(function(p){
+      var esc=p.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+      return '<div class="chip '+(sel[p]?"on":"")+'" onclick="tog(\''+esc+'\',this)">'+
+        '<input type="checkbox" '+(sel[p]?"checked":"")+' onclick="event.stopPropagation();tog(\''+esc+'\',this.closest(\'.chip\'))"/>'+
+        '<span>'+p+'</span></div>';
+    }).join("");
+  });
+}
+
+function tog(n,el){
+  sel[n]=!sel[n];
+  el.classList.toggle("on",sel[n]);
+  el.querySelector("input").checked=sel[n];
+}
+
+function grp(id){return(PLATFORMS[id]||[]).filter(function(p){return sel[p];});}
+
+function go(n){
+  if(n>cur&&!valid()) return;
+  document.getElementById("p"+cur).classList.remove("active");
+  cur=n;
+  document.getElementById("p"+cur).classList.add("active");
+  renderSteps();
+  if(n===2) renderCfg();
+  if(n===3) renderQuote();
+  window.scrollTo(0,0);
+}
+
+function valid(){
+  if(cur===0){
+    var req=["repName","clientName","industry","budget","duration","startDate","endDate","objective","brief"];
+    for(var i=0;i<req.length;i++){
+      if(!document.getElementById(req[i]).value.trim()){
+        alert("Please fill in all required fields (marked *)");
+        document.getElementById(req[i]).focus();
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function renderCfg(){renderDisplayCfg();renderContentCfg();renderSocialCfg();renderPaidCfg();renderPrintCfg();}
+
+function renderDisplayCfg(){
+  var pp=grp("g-iol").concat(grp("g-dailies-d"),grp("g-comm-d"),grp("g-conde-d"));
+  var el=document.getElementById("cfg-display");
+  if(!pp.length){el.innerHTML='<p class="empty">No display platforms selected.</p>';return;}
+  var h="";
+  pp.forEach(function(p){
+    var cpm=CPM[p]; var s=li["d_"+p]||{};
+    var flat=(p==="Fast Company"||p==="Sandton Times");
+    if(flat){
+      var opts=p==="Fast Company"
+        ?'<option value="12500">Homepage Background R12,500</option><option value="7800">Leaderboard R7,800</option><option value="5500">Homepage Banner R5,500</option>'
+        :'<option value="5000">Site Takeover 24h R5,000</option>';
+      h+='<div class="card"><h4>'+p+'<span class="tag">flat rate</span></h4>'+
+        '<div class="r4">'+
+        '<div class="field"><label>Placement</label><select id="fmt_'+K(p)+'">'+opts+'</select></div>'+
+        '<div class="field"><label>Days/units</label><input type="number" min="1" value="'+(s.qty||1)+'" id="qty_'+K(p)+'" oninput="calcFlat(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div></div>'+
+        '<div class="field"><label>Total</label><div class="calc" id="calc_'+K(p)+'">'+fmt((s.qty||1)*cpm)+'</div></div>'+
+        '</div></div>';
+    } else {
+      var imps=s.imps||10000; var rate=s.cpm||cpm;
+      h+='<div class="card"><h4>'+p+'<span class="tag">CPM R'+cpm+'</span></h4>'+
+        '<div class="r4">'+
+        '<div class="field"><label>Format</label><select id="fmt_'+K(p)+'"><option>Standard display</option><option>Takeover/Roadblock</option><option>Rich Media</option><option>Outstream Video</option></select></div>'+
+        '<div class="field"><label>Impressions</label><input type="number" min="1000" step="1000" value="'+imps+'" id="imp_'+K(p)+'" oninput="calcDis(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div class="field"><label>CPM (R)</label><input type="number" value="'+rate+'" id="cpm_'+K(p)+'" oninput="calcDis(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div class="field"><label>Total</label><div class="calc" id="calc_'+K(p)+'">'+fmt(imps*rate/1000)+'</div></div>'+
+        '</div></div>';
+    }
+  });
+  el.innerHTML=h;
+  pp.forEach(function(p){if(CPM[p]&&p!=="Fast Company"&&p!=="Sandton Times") calcDis(K(p),p);});
+}
+function calcDis(k,p){
+  var ie=document.getElementById("imp_"+k); var ce=document.getElementById("cpm_"+k);
+  if(!ie||!ce) return;
+  var i=parseFloat(ie.value||0); var c=parseFloat(ce.value||0); var t=i*c/1000;
+  var el=document.getElementById("calc_"+k); if(el) el.textContent=fmt(t);
+  li["d_"+p]={imps:i,cpm:c,total:t};
+}
+function calcFlat(k,p){
+  var qe=document.getElementById("qty_"+k); var fe=document.getElementById("fmt_"+k);
+  if(!qe||!fe) return;
+  var q=parseFloat(qe.value||1); var r=parseFloat(fe.value||CPM[p]); var t=q*r;
+  var el=document.getElementById("calc_"+k); if(el) el.textContent=fmt(t);
+  li["d_"+p]={qty:q,rate:r,total:t};
+}
+
+function renderContentCfg(){
+  var pp=grp("g-content"); var el=document.getElementById("cfg-content");
+  if(!pp.length){el.innerHTML='<p class="empty">No content marketing selected.</p>';return;}
+  var h="";
+  pp.forEach(function(p){
+    var b=CRATE[p]||10000; var s=li["c_"+p]||{};
+    h+='<div class="card"><h4>'+p+'<span class="tag">'+fmt(b)+'/article</span></h4>'+
+      '<div class="r4"><div></div>'+
+      '<div class="field"><label>Quantity</label><input type="number" min="1" value="'+(s.qty||1)+'" id="qty_'+K(p)+'" oninput="calcCon(\''+K(p)+'\',\''+p+'\')"/></div>'+
+      '<div class="field"><label>Rate per article</label><input type="number" value="'+(s.rate||b)+'" id="rate_'+K(p)+'" oninput="calcCon(\''+K(p)+'\',\''+p+'\')"/></div>'+
+      '<div class="field"><label>Total</label><div class="calc" id="calc_'+K(p)+'">'+fmt((s.qty||1)*(s.rate||b))+'</div></div>'+
+      '</div></div>';
+  });
+  el.innerHTML=h;
+}
+function calcCon(k,p){
+  var q=parseFloat(document.getElementById("qty_"+k).value||1);
+  var r=parseFloat(document.getElementById("rate_"+k).value||10000);
+  var t=q*r; var el=document.getElementById("calc_"+k); if(el) el.textContent=fmt(t);
+  li["c_"+p]={qty:q,rate:r,total:t};
+}
+
+function renderSocialCfg(){
+  var pp=grp("g-social"); var el=document.getElementById("cfg-social");
+  if(!pp.length){el.innerHTML='<p class="empty">No social media selected.</p>';return;}
+  var h="";
+  pp.forEach(function(p){
+    var b=SRATE[p]||500; var s=li["s_"+p]||{};
+    h+='<div class="card"><h4>'+p+'<span class="tag">'+fmt(b)+'/post</span></h4>'+
+      '<div class="r4">'+
+      '<div class="field"><label>Posts</label><input type="number" min="1" value="'+(s.qty||4)+'" id="qty_'+K(p)+'" oninput="calcSoc(\''+K(p)+'\',\''+p+'\')"/></div>'+
+      '<div class="field"><label>Rate per post</label><input type="number" value="'+(s.rate||b)+'" id="rate_'+K(p)+'" oninput="calcSoc(\''+K(p)+'\',\''+p+'\')"/></div>'+
+      '<div class="field"><label>Boosting budget</label><input type="number" min="0" value="'+(s.boost||0)+'" placeholder="0" id="boost_'+K(p)+'" oninput="calcSoc(\''+K(p)+'\',\''+p+'\')"/></div>'+
+      '<div class="field"><label>Total (incl 30% fee)</label><div class="calc" id="calc_'+K(p)+'">'+fmt((s.qty||4)*(s.rate||b)+(s.boost||0)*1.3)+'</div></div>'+
+      '</div><p style="font-size:11px;color:#999;margin-top:6px">30% management fee applied to boosting budget</p></div>';
+  });
+  el.innerHTML=h;
+}
+function calcSoc(k,p){
+  var q=parseFloat(document.getElementById("qty_"+k).value||4);
+  var r=parseFloat(document.getElementById("rate_"+k).value||500);
+  var b=parseFloat(document.getElementById("boost_"+k).value||0);
+  var m=b*0.3; var t=q*r+b+m;
+  var el=document.getElementById("calc_"+k); if(el) el.textContent=fmt(t);
+  li["s_"+p]={qty:q,rate:r,boost:b,mgmt:m,total:t};
+}
+
+function renderPaidCfg(){
+  var pp=grp("g-paid"); var el=document.getElementById("cfg-paid");
+  if(!pp.length){el.innerHTML='<p class="empty">No paid media selected.</p>';return;}
+  var s=li.paid||{};
+  el.innerHTML='<div class="card"><h4>Paid Media<span class="tag">Setup R3,500/account + 30% mgmt</span></h4>'+
+    '<p style="font-size:13px;color:#5a5850;margin-bottom:12px">Channels: <strong>'+pp.join(", ")+'</strong></p>'+
+    '<div class="g2" style="margin-bottom:12px">'+
+    '<div class="field"><label>Placements and targeting notes</label><textarea id="paidPlacement" style="min-height:65px" placeholder="e.g. YouTube 15s pre-roll, Facebook feed, Instagram Reels...">'+(s.placement||"")+'</textarea></div>'+
+    '<div>'+
+    '<div class="field"><label>Funnel objective</label><select id="paidFunnel"><option>Awareness</option><option>Consideration</option><option>Conversion</option><option>Awareness to Consideration</option><option>Awareness to Conversion</option></select></div>'+
+    '<div class="field"><label>Campaign duration</label><input type="text" id="paidDur" value="'+(s.duration||"")+'" placeholder="e.g. 3 months"/></div>'+
+    '</div></div>'+
+    '<div class="r4">'+
+    '<div class="field"><label>Total media spend</label><input type="number" min="0" value="'+(s.amount||0)+'" id="paidAmt" oninput="calcPaid()"/></div>'+
+    '<div class="field"><label>Accounts</label><input type="number" min="1" value="'+(s.accounts||1)+'" id="paidAcc" oninput="calcPaid()"/></div>'+
+    '<div class="field"><label>Setup fee</label><div class="calc" id="paidSetup">'+fmt((s.accounts||1)*3500)+'</div></div>'+
+    '<div class="field"><label>Mgmt fee 30%</label><div class="calc" id="paidMgmt">'+fmt((s.amount||0)*0.3)+'</div></div>'+
+    '</div></div>';
+  calcPaid();
+}
+function calcPaid(){
+  var ae=document.getElementById("paidAmt"); var ace=document.getElementById("paidAcc");
+  if(!ae||!ace) return;
+  var a=parseFloat(ae.value||0); var ac=parseFloat(ace.value||1);
+  var se=ac*3500; var mg=a*0.3;
+  var s=document.getElementById("paidSetup"); if(s) s.textContent=fmt(se);
+  var m=document.getElementById("paidMgmt"); if(m) m.textContent=fmt(mg);
+  li.paid={amount:a,accounts:ac,setup:se,mgmt:mg,total:a+se+mg,
+    placement:document.getElementById("paidPlacement").value||"",
+    funnel:document.getElementById("paidFunnel").value||"",
+    duration:document.getElementById("paidDur").value||""};
+}
+
+function renderPrintCfg(){
+  var pp=grp("g-print-d").concat(grp("g-print-c"),grp("g-print-m"));
+  var el=document.getElementById("cfg-print");
+  if(!pp.length){el.innerHTML='<p class="empty">No print titles selected.</p>';return;}
+  var h="";
+  pp.forEach(function(p){
+    var r=PRATE[p]; var s=li["p_"+p]||{}; var mag=MAGS.indexOf(p)>=0;
+    if(mag){
+      h+='<div class="card"><h4>'+p+'<span class="tag">'+fmt(r)+' full page</span></h4>'+
+        '<div class="r4">'+
+        '<div class="field"><label>Size</label><select id="psize_'+K(p)+'" onchange="calcPrt(\''+K(p)+'\',\''+p+'\')">'+
+        '<option value="'+r+'">Full page '+fmt(r)+'</option>'+
+        (p!=="Fast Company Print"?'<option value="'+(r*2)+'">Double page spread '+fmt(r*2)+'</option>':'')+
+        '<option value="'+(r*0.5)+'">Half page '+fmt(r*0.5)+'</option>'+
+        '</select></div>'+
+        '<div class="field"><label>Insertions</label><input type="number" min="1" value="'+(s.qty||1)+'" id="qty_'+K(p)+'" oninput="calcPrt(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div></div>'+
+        '<div class="field"><label>Total</label><div class="calc" id="calc_'+K(p)+'">'+fmt((s.qty||1)*r)+'</div></div>'+
+        '</div></div>';
+    } else {
+      h+='<div class="card"><h4>'+p+'<span class="tag">R'+r+'/col cm</span></h4>'+
+        '<div class="r4">'+
+        '<div class="field"><label>Size preset</label><select id="psize_'+K(p)+'" onchange="calcPrt(\''+K(p)+'\',\''+p+'\')">'+
+        PSIZES.map(function(x){return '<option value="'+x.v+'">'+x.l+'</option>';}).join("")+
+        '</select></div>'+
+        '<div class="field"><label>Custom col cm</label><input type="number" min="0" placeholder="override" id="pcust_'+K(p)+'" oninput="calcPrt(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div class="field"><label>Insertions</label><input type="number" min="1" value="'+(s.qty||1)+'" id="qty_'+K(p)+'" oninput="calcPrt(\''+K(p)+'\',\''+p+'\')"/></div>'+
+        '<div class="field"><label>Total</label><div class="calc" id="calc_'+K(p)+'">'+fmt((s.qty||1)*300*r)+'</div></div>'+
+        '</div></div>';
+    }
+  });
+  el.innerHTML=h;
+  pp.forEach(function(p){calcPrt(K(p),p);});
+}
+function calcPrt(k,p){
+  var mag=MAGS.indexOf(p)>=0;
+  var qe=document.getElementById("qty_"+k); if(!qe) return;
+  var q=parseFloat(qe.value||1);
+  var r,cm,t;
+  if(mag){
+    var pe=document.getElementById("psize_"+k); if(!pe) return;
+    r=parseFloat(pe.value||PRATE[p]); t=q*r; cm=1;
+  } else {
+    var cue=document.getElementById("pcust_"+k);
+    var pse=document.getElementById("psize_"+k);
+    cm=cue&&cue.value?parseFloat(cue.value):parseFloat(pse?pse.value:300);
+    r=PRATE[p]; t=q*cm*r;
+  }
+  var el=document.getElementById("calc_"+k); if(el) el.textContent=fmt(t);
+  li["p_"+p]={qty:q,colcm:cm,rate:r,total:t};
+}
+
+function totals(){
+  var dT=0,cT=0,sT=0,pT=0,prT=0,dI=[],cI=[],sI=[],prI=[];
+  var dp=grp("g-iol").concat(grp("g-dailies-d"),grp("g-comm-d"),grp("g-conde-d"));
+  dp.forEach(function(p){var x=li["d_"+p];if(x){dT+=x.total||0;dI.push({name:p,imps:x.imps,cpm:x.cpm,qty:x.qty,total:x.total});}});
+  grp("g-content").forEach(function(p){var x=li["c_"+p];if(x){cT+=x.total||0;cI.push({name:p,qty:x.qty,rate:x.rate,total:x.total});}});
+  grp("g-social").forEach(function(p){var x=li["s_"+p];if(x){sT+=x.total||0;sI.push({name:p,qty:x.qty,rate:x.rate,boost:x.boost,mgmt:x.mgmt,total:x.total});}});
+  if(li.paid) pT=li.paid.total||0;
+  grp("g-print-d").concat(grp("g-print-c"),grp("g-print-m")).forEach(function(p){var x=li["p_"+p];if(x){prT+=x.total||0;prI.push({name:p,qty:x.qty,total:x.total});}});
+  return{dT:dT,cT:cT,sT:sT,pT:pT,prT:prT,dI:dI,cI:cI,sI:sI,prI:prI,grand:dT+cT+sT+pT+prT};
+}
+
+function renderQuote(){
+  var t=totals(); var h="";
+  if(t.dI.length){
+    h+='<div class="qsec"><h3>Display Advertising</h3>';
+    t.dI.forEach(function(i){h+='<div class="qrow"><span class="ql">'+i.name+(i.imps?" - "+i.imps.toLocaleString()+" imps @ CPM R"+i.cpm:"")+'</span><span class="qv">'+fmt(i.total)+'</span></div>';});
+    h+='<div class="qrow sub"><span class="ql">Subtotal</span><span class="qv">'+fmt(t.dT)+'</span></div></div>';
+  }
+  if(t.cI.length){
+    h+='<div class="qsec"><h3>Content Marketing</h3>';
+    t.cI.forEach(function(i){h+='<div class="qrow"><span class="ql">'+i.name+' x'+i.qty+'</span><span class="qv">'+fmt(i.total)+'</span></div>';});
+    h+='<div class="qrow sub"><span class="ql">Subtotal</span><span class="qv">'+fmt(t.cT)+'</span></div></div>';
+  }
+  if(t.sI.length){
+    h+='<div class="qsec"><h3>Social Media</h3>';
+    t.sI.forEach(function(i){
+      h+='<div class="qrow"><span class="ql">'+i.name+' x'+i.qty+' posts</span><span class="qv">'+fmt(i.qty*i.rate)+'</span></div>';
+      if(i.boost>0){h+='<div class="qrow"><span class="ql">  Boosting ('+i.name+')</span><span class="qv">'+fmt(i.boost)+'</span></div><div class="qrow"><span class="ql">  Boosting mgmt fee 30%</span><span class="qv">'+fmt(i.mgmt)+'</span></div>';}
+    });
+    h+='<div class="qrow sub"><span class="ql">Subtotal</span><span class="qv">'+fmt(t.sT)+'</span></div></div>';
+  }
+  if(li.paid&&t.pT>0){
+    var p=li.paid;
+    h+='<div class="qsec"><h3>Paid Media</h3>'+
+      '<div class="qrow"><span class="ql">Media spend ('+p.accounts+' account'+(p.accounts>1?'s':'')+')</span><span class="qv">'+fmt(p.amount)+'</span></div>'+
+      '<div class="qrow"><span class="ql">Setup fee ('+p.accounts+' x R3,500)</span><span class="qv">'+fmt(p.setup)+'</span></div>'+
+      '<div class="qrow"><span class="ql">Management fee 30%</span><span class="qv">'+fmt(p.mgmt)+'</span></div>'+
+      '<div class="qrow sub"><span class="ql">Subtotal</span><span class="qv">'+fmt(t.pT)+'</span></div></div>';
+  }
+  if(t.prI.length){
+    h+='<div class="qsec"><h3>Print Advertising</h3>';
+    t.prI.forEach(function(i){h+='<div class="qrow"><span class="ql">'+i.name+' x'+i.qty+' insertion'+(i.qty>1?'s':'')+'</span><span class="qv">'+fmt(i.total)+'</span></div>';});
+    h+='<div class="qrow sub"><span class="ql">Subtotal</span><span class="qv">'+fmt(t.prT)+'</span></div></div>';
+  }
+  if(!h) h='<p class="empty">No items configured. Go back and select platforms, then set quantities.</p>';
+  else h+='<div class="grand"><span>Total Investment (excl. VAT)</span><span class="ga">'+fmt(t.grand)+'</span></div>';
+  document.getElementById("qSummary").innerHTML=h;
+}
+
+function saveKey(){
+  var k=document.getElementById("apiKey").value.trim();
+  if(k){localStorage.setItem("volt_key",k);document.getElementById("apibox").style.display="none";}
+}
+function loadKey(){
+  document.getElementById("apibox").style.display="none";
+}
+
+async function generate(){
+  var key=localStorage.getItem("volt_key")||document.getElementById("apiKey").value.trim()||"via-worker";
+  go(4);
+  var t=totals();
+  var el=document.getElementById("aiOut");
+  el.innerHTML='<div class="genwrap"><div class="spinner"></div><p>Generating your proposal...<br><small>This takes about 20 seconds</small></p></div>';
+  var d={
+    rep:document.getElementById("repName").value,
+    client:document.getElementById("clientName").value,
+    industry:document.getElementById("industry").value,
+    website:document.getElementById("website").value,
+    budget:document.getElementById("budget").value,
+    duration:document.getElementById("duration").value,
+    start:document.getElementById("startDate").value,
+    end:document.getElementById("endDate").value,
+    objective:document.getElementById("objective").value,
+    goal:document.getElementById("clientGoal").value,
+    existing:document.getElementById("currentAds").value,
+    brief:document.getElementById("brief").value
+  };
+  var dL=grp("g-iol").concat(grp("g-dailies-d"),grp("g-comm-d"),grp("g-conde-d"));
+  var cL=grp("g-content"),sL=grp("g-social"),pL=grp("g-paid");
+  var prL=grp("g-print-d").concat(grp("g-print-c"),grp("g-print-m"));
+  var lines=[];
+  t.dI.forEach(function(i){lines.push("DISPLAY | "+i.name+" | "+(i.imps?i.imps.toLocaleString()+" impressions":"flat")+" | R"+Math.round(i.total).toLocaleString());});
+  t.cI.forEach(function(i){lines.push("CONTENT | "+i.name+" | "+i.qty+" article(s) | R"+Math.round(i.total).toLocaleString());});
+  t.sI.forEach(function(i){lines.push("SOCIAL | "+i.name+" | "+i.qty+" posts + R"+i.boost+" boosting | R"+Math.round(i.total).toLocaleString());});
+  if(li.paid&&t.pT>0){lines.push("PAID | "+(li.paid.placement||pL.join(", "))+" | "+li.paid.accounts+" account(s) | Spend R"+Math.round(li.paid.amount).toLocaleString()+" + Setup R"+Math.round(li.paid.setup).toLocaleString()+" + Mgmt R"+Math.round(li.paid.mgmt).toLocaleString());}
+  t.prI.forEach(function(i){lines.push("PRINT | "+i.name+" | "+i.qty+" insertion(s) | R"+Math.round(i.total).toLocaleString());});
+
+  var prompt="You are a senior media strategist at Volt Africa, a leading South African digital and print media company. Generate tailored professional content for each slide of an advertising proposal. Be specific to this client. Use South African context throughout.\n\n"+
+    "CLIENT: "+d.client+" | Industry: "+d.industry+"\nWebsite: "+(d.website||"not provided")+"\nObjective: "+d.objective+"\nGoal: "+d.goal+"\nBudget: "+d.budget+" | Duration: "+d.duration+" ("+d.start+" to "+d.end+")\nExisting ads: "+(d.existing||"none")+"\nBrief: "+d.brief+"\n\n"+
+    "MEDIA MIX: Display: "+(dL.join(", ")||"none")+" | Content: "+(cL.join(", ")||"none")+" | Social: "+(sL.join(", ")||"none")+" | Paid: "+(pL.join(", ")||"none")+" | Print: "+(prL.join(", ")||"none")+"\nTOTAL: R"+Math.round(t.grand).toLocaleString()+" excl VAT\n\n"+
+    "Use exact headers: === SLIDE X - TITLE ===\n\n"+
+    "=== SLIDE 1 - CLIENT NAME ===\n"+d.client+"\n\n"+
+    "=== SLIDE 4 - CAMPAIGN OUTLINE ===\nCampaign Period: "+d.start+" to "+d.end+"\nClient: "+d.client+"\nCampaign Objective: [one tailored sentence]\nIndustry: "+d.industry+"\n\n"+
+    "=== SLIDE 5 - TARGET AUDIENCE ===\nAge: [specific SA age range]\nGender: [recommendation]\nInterests: [3-5 specific interests]\nIncome Level / LSM: [SA LSM bracket]\nGeographics: [specific SA regions]\nPain Points: [2-3 pain points]\n\n"+
+    "=== SLIDE 6 - DISPLAY ADVERTISING ===\nPlacement: [list selected display platforms]\nFormat: [specific ad formats]\nGoal: [one paragraph for this client]\nMarketing Funnel Objective: [specify]\n\n"+
+    "=== SLIDE 7 - CONTENT MARKETING ===\nPlacement: [list selected content platforms]\nEditorial Themes:\n1. [specific theme]\n2. [specific theme]\n3. [specific theme]\nGoal: To build awareness, drive engagement, and position the brand as a credible voice within its industry.\n\n"+
+    "=== SLIDE 8 - SOCIAL MEDIA ===\nPlacement: [list platforms with handles e.g. IOL @IOL_news]\n\n"+
+    "=== SLIDE 9 - PAID MEDIA ===\nPlacement: [list paid channels with targeting details]\nMarketing Funnel Objective: [recommendation]\nSuggested Campaign Duration: [affirm or refine]\n\n"+
+    "=== SLIDE 10 - PRINT ADVERTISING ===\nTitles: [list all selected print titles]\nAd Sizes: [recommend sizes per title]\nDuration: [flighting recommendation]\nNumber of ads: [recommendation]\n\n"+
+    "=== SLIDE 11 - INVESTMENT SUMMARY ===\n"+lines.join("\n")+"\nTOTAL INVESTMENT: R"+Math.round(t.grand).toLocaleString()+" (excl. VAT)\nAll rates exclude agency commission and VAT.\n\n"+
+    "=== SLIDE 12 - REP DETAILS ===\n"+d.rep;
+
+  try{
+    var resp=await fetch("https://billowing-unit-4511.fhmkhota.workers.dev",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2500,messages:[{role:"user",content:prompt}]})
+    });
+    var data=await resp.json();
+    if(data.error){el.innerHTML='<div class="errmsg"><strong>API Error:</strong> '+data.error.message+'<br><br>Check your key and billing at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>';return;}
+    var text=(data.content||[]).map(function(c){return c.text||"";}).join("");
+    renderSlides(text);
+    var fd={rep:document.getElementById("repName").value,client:document.getElementById("clientName").value,start:document.getElementById("startDate").value,end:document.getElementById("endDate").value,objective:document.getElementById("objective").value};
+    storePptxData(buildPptxReplacements(text,fd,totals()));
+  }catch(err){
+    el.innerHTML='<div class="errmsg"><strong>Network Error:</strong> '+err.message+'<br>Make sure you have a valid API key entered in Step 1.</div>';
+  }
+}
+
+function renderSlides(text){
+  var el=document.getElementById("aiOut");
+  var parts=text.split(/===\s*SLIDE\s*(\d+)[^=]*===/i);
+  var h="";
+  for(var i=1;i<parts.length;i+=2){
+    var num=parseInt(parts[i]);
+    var content=(parts[i+1]||"").trim();
+    var title=SNAMES[num]||"Slide "+num;
+    h+='<div class="scard"><div class="snum">Slide '+num+'</div><h3>'+title+'<button class="cpybtn" onclick="cpySlide(this)">Copy</button></h3><div class="scontent">'+content+'</div></div>';
+  }
+  el.innerHTML=h||'<div class="scard"><div class="scontent">'+text+'</div></div>';
+}
+
+function cpySlide(btn){
+  var content=btn.closest(".scard").querySelector(".scontent").innerText;
+  navigator.clipboard.writeText(content).then(function(){
+    var o=btn.textContent; btn.textContent="Copied!"; setTimeout(function(){btn.textContent=o;},1800);
+  });
+}
+function copyAll(){
+  var out="";
+  document.querySelectorAll(".scard").forEach(function(c){
+    var num=(c.querySelector(".snum")||{}).textContent||"";
+    var tit=((c.querySelector("h3")||{}).firstChild||{}).textContent||"";
+    var body=(c.querySelector(".scontent")||{}).innerText||"";
+    out+=num+" - "+tit.trim()+"\n"+body+"\n\n";
+  });
+  navigator.clipboard.writeText(out.trim()).then(function(){
+    var b=document.getElementById("copyAllBtn"); var o=b.textContent; b.textContent="Copied!"; setTimeout(function(){b.textContent=o;},2000);
+  });
+}
+
+
+// ── PPTX GENERATION (browser-side, no libraries needed) ──────
+var FIXED_LEN = 200;
+var SLIDE_RE  = /^ppt\/slides\/slide\d+\.xml$/;
+var pptxData  = null;
+
+function storePptxData(rep) {
+  pptxData = rep;
+  document.getElementById("dlPptxBtn").style.display = "inline-block";
+}
+
+async function downloadPptx() {
+  if (!pptxData) { alert("Please generate a proposal first."); return; }
+  var btn = document.getElementById("dlPptxBtn");
+  btn.textContent = "Building PPTX...";
+  btn.disabled = true;
+  try {
+    // Fetch padded template from GitHub (browser has no CPU time limit)
+    var tmplUrl = window.location.href.replace(/\/[^\/]*$/, "/") + "Proposal_Template.pptx";
+    var resp = await fetch(tmplUrl);
+    if (!resp.ok) throw new Error("Could not fetch template (" + resp.status + "). Make sure Proposal_Template.pptx is uploaded to GitHub.");
+    var raw = new Uint8Array((await resp.arrayBuffer()).slice(0));
+
+    // Step 1: Replace all padded placeholders with padded values
+    for (var ph in pptxData) {
+      var val     = xmlEsc(String(pptxData[ph]));
+      var phPad   = padStr(ph,  FIXED_LEN);
+      var valPad  = padStr(val, FIXED_LEN);
+      var phBytes = toBytes(phPad);
+      var vlBytes = toBytes(valPad);
+      var from = 0;
+      while (true) {
+        var pos = findBytes(raw, phBytes, from);
+        if (pos === -1) break;
+        raw.set(vlBytes, pos);
+        from = pos + FIXED_LEN;
+      }
+    }
+
+    // Step 2: Update CRC32 for each slide XML in the zip
+    var dv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+
+    // Find EOCD
+    var eocd = -1;
+    for (var i = raw.length - 22; i >= 0; i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("Invalid ZIP");
+
+    var cdStart  = dv.getUint32(eocd + 16, true);
+    var numFiles = dv.getUint16(eocd + 8,  true);
+
+    var cdPos = cdStart;
+    for (var f = 0; f < numFiles; f++) {
+      var fnLen  = dv.getUint16(cdPos + 28, true);
+      var exLen  = dv.getUint16(cdPos + 30, true);
+      var cmLen  = dv.getUint16(cdPos + 32, true);
+      var fname  = fromBytes(raw.slice(cdPos + 46, cdPos + 46 + fnLen));
+      var lhOff  = dv.getUint32(cdPos + 42, true);
+
+      if (/^ppt\/slides\/slide\d+\.xml$/.test(fname)) {
+        var uncompSz = dv.getUint32(cdPos + 24, true);
+        var lhFnLen  = dv.getUint16(lhOff + 26, true);
+        var lhExLen  = dv.getUint16(lhOff + 28, true);
+        var dataOff  = lhOff + 30 + lhFnLen + lhExLen;
+        var slideData = raw.slice(dataOff, dataOff + uncompSz);
+        var newCrc   = crc32(slideData);
+        dv.setUint32(lhOff + 14, newCrc, true);
+        dv.setUint32(cdPos + 16, newCrc, true);
+      }
+
+      cdPos += 46 + fnLen + exLen + cmLen;
+    }
+
+    // Download
+    var clientName = (pptxData["{{Client Name}}"] || "Proposal").replace(/[^a-zA-Z0-9 ]/g,"").trim().replace(/ /g,"_");
+    var blob = new Blob([raw], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement("a");
+    a.href = url; a.download = "Volt_Africa_" + clientName + ".pptx";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    btn.textContent = "Download PPTX"; btn.disabled = false;
+
+  } catch(err) {
+    alert("PPTX Error: " + err.message);
+    btn.textContent = "Download PPTX"; btn.disabled = false;
+  }
+}
+
+function buildPptxReplacements(text, formData, t) {
+  function field(sec, label) {
+    if (!sec) return "";
+    var m = sec.match(new RegExp(label + "[:\\s]+([^\n]+)", "i"));
+    return m ? m[1].trim() : "";
+  }
+  var sections = {};
+  var parts = text.split(/===\s*SLIDE\s*(\d+)[^=]*===/i);
+  for (var i = 1; i < parts.length; i += 2) sections[parseInt(parts[i])] = (parts[i+1]||"").trim();
+
+  var dN  = t.dI.map(function(i){return i.name;}).join(", ") || "-";
+  var cN  = t.cI.map(function(i){return i.name;}).join(", ") || "-";
+  var sN  = t.sI.map(function(i){return i.name;}).join(", ") || "-";
+  var pN  = (li.paid&&t.pT>0)?(li.paid.placement||grp("g-paid").join(", ")):"-";
+  var prN = t.prI.map(function(i){return i.name;}).join(", ") || "-";
+  var prS = t.prI.map(function(i){return i.name+(i.colcm?" ("+i.colcm+" col.cm)":"");}).join(", ") || "-";
+
+  return {
+    "{{Client Name}}":  formData.client,
+    "{{Rep Name}}":     formData.rep,
+    "{{Slide 4 Campaign Period}}":    formData.start + " to " + formData.end,
+    "{{Slide 4 Campaign Objective}}": formData.objective,
+    "{{Slide 5 Target Age Group}}":   field(sections[5],"Age"),
+    "{{Slide 5 Target Gender}}":      field(sections[5],"Gender"),
+    "{{Slide 5 Interests}}":          field(sections[5],"Interests"),
+    "{{Slide 5 Income Level}}":       field(sections[5],"Income Level"),
+    "{{Slide 5 Target Regions}}":     field(sections[5],"Geographics"),
+    "{{Slide 5 Pain Points}}":        field(sections[5],"Pain Points"),
+    "{{Slide 6 Display Site Placement}}": dN,
+    "{{Slide 6 Targeting Format}}":   field(sections[6],"Format") || "728x90, 300x250, 300x600",
+    "{{Slide 7 Content Placement}}":  cN,
+    "{{Slide 7 Content Format}}":     "Client to provide copy, header image and external link.",
+    "{{Slide 8 Social Media Placement}}": field(sections[8],"Placement") || sN,
+    "{{Slide 9 Paid Media Placement}}":   field(sections[9],"Placement") || pN,
+    "{{Slide 10 Print Ads Titles}}":  prN,
+    "{{Slide 10 Print Ad Sizes}}":    prS,
+    "{{Slide 11 Display Site Placement Quantity}}": t.dI.map(function(i){return i.imps?i.imps.toLocaleString()+" imps":i.qty+" unit(s)";}).join(", ")||"-",
+    "{{Slide 11 Display Rate}}":      t.dI.map(function(i){return fmt(i.total);}).join(", ")||"-",
+    "{{Slide 11 Content Quantity}}":  t.cI.map(function(i){return i.qty+" article(s)";}).join(", ")||"-",
+    "{{Slide 11 Content Rate}}":      t.cI.map(function(i){return fmt(i.total);}).join(", ")||"-",
+    "{{Slide 11 Social Media Organic Posts Quantity}}": t.sI.map(function(i){return i.qty+" posts";}).join(", ")||"-",
+    "{{Slide 11 Social Media Rate}}": t.sI.map(function(i){return fmt(i.qty*i.rate);}).join(", ")||"-",
+    "{{Slide 11 Social Boosting Amount}}":    t.sI.map(function(i){return i.boost>0?fmt(i.boost):"-";}).join(", ")||"-",
+    "{{Slide 11 Social Media Management Fee}}": t.sI.map(function(i){return i.boost>0?fmt(i.mgmt):"-";}).join(", ")||"-",
+    "{{Slide 11 Paid Media Amount}}": (li.paid&&t.pT>0)?fmt(li.paid.amount):"-",
+    "{{Slide 11 Paid Media Accounts Quantity}}": (li.paid&&t.pT>0)?li.paid.accounts+" account(s)":"-",
+    "{{Slide 11 Paid Media Setup Cost}}": (li.paid&&t.pT>0)?fmt(li.paid.setup):"-",
+    "{{Slide 11 Paid Media Management Fee}}": (li.paid&&t.pT>0)?fmt(li.paid.mgmt):"-",
+    "{{Slide 11 Print Ads Quantity}}": t.prI.map(function(i){return i.qty+" insertion(s)";}).join(", ")||"-",
+    "{{ Slide 11 Print Ads Rate}}":    t.prI.map(function(i){return fmt(i.total);}).join(", ")||"-",
+    "{{ Slide 11 Print Total quote amount}}": fmt(t.grand)
+  };
+}
+
+// Utilities
+function xmlEsc(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function padStr(s, len) {
+  s = s.slice(0, len);
+  while (s.length < len) s += " ";
+  return s;
+}
+function toBytes(s)   { return new TextEncoder().encode(s); }
+function fromBytes(b) { return new TextDecoder().decode(b); }
+function findBytes(hay, needle, from) {
+  from = from || 0;
+  outer: for (var i = from; i <= hay.length - needle.length; i++) {
+    for (var j = 0; j < needle.length; j++) {
+      if (hay[i+j] !== needle[j]) continue outer;
+    }
+    return i;
+  }
+  return -1;
+}
+function crc32(buf) {
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < buf.length; i++) {
+    c ^= buf[i];
+    for (var j = 0; j < 8; j++) c = (c >>> 1) ^ (c & 1 ? 0xEDB88320 : 0);
+  }
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+renderPlatforms();
+renderSteps();
+loadKey();
+</script>
+</body>
+</html>
