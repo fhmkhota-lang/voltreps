@@ -606,11 +606,11 @@ async function downloadPptx() {
     var tmplUrl = window.location.href.replace(/\/[^\/]*$/, "/") + "Proposal_Template.pptx";
     var resp = await fetch(tmplUrl);
     if (!resp.ok) throw new Error("Could not fetch template (" + resp.status + "). Make sure Proposal_Template.pptx is uploaded to GitHub.");
-    var raw = new Uint8Array(await resp.arrayBuffer());
+    var raw = new Uint8Array((await resp.arrayBuffer()).slice(0));
 
     // Step 1: Replace all padded placeholders with padded values
     for (var ph in pptxData) {
-      var val     = String(pptxData[ph]);
+      var val     = xmlEsc(String(pptxData[ph]));
       var phPad   = padStr(ph,  FIXED_LEN);
       var valPad  = padStr(val, FIXED_LEN);
       var phBytes = toBytes(phPad);
@@ -730,6 +730,9 @@ function buildPptxReplacements(text, formData, t) {
 }
 
 // Utilities
+function xmlEsc(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
 function padStr(s, len) {
   s = s.slice(0, len);
   while (s.length < len) s += " ";
